@@ -5,7 +5,15 @@ package com.dw.springloadedremoteclient;
  *
  */
 public class App {
+
   public static void main(String[] args) {
-    // TODO ::
+    Watcher w = new Watcher("/media/dev/test", new Listener() {
+
+      public void onChange(Change change) {
+        // Log Change event.
+        // Note:: Path must be starting with /, and baseDir shouldn't be repeated.
+      }
+    });
+    w.start();
   }
 }
