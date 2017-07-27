@@ -10,8 +10,8 @@ public class App {
     Watcher w = new Watcher("/media/dev/test", new Listener() {
 
       public void onChange(Change change) {
-        // Log Change event.
         // Note:: Path must be starting with /, and baseDir shouldn't be repeated.
+        System.out.format("%s: %s\n", change.getType().toString(), change.getPath());
       }
     });
     w.start();

@@ -22,6 +22,6 @@ public class Change {
   }
 
   public enum Type {
-    PUT, DELETED;
+    CREATED, UPDATED, DELETED;
   }
 }
