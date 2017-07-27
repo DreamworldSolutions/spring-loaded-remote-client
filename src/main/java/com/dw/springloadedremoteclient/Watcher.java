@@ -5,8 +5,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
-import org.apache.commons.lang3.StringUtils;
-
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -45,7 +44,7 @@ public class Watcher {
   private WatchService watcher;
   private Map<WatchKey, Path> keys;
 
-  private String baseDir;
+  private String baseDirPath;
   private Listener listener;
 
   /**
@@ -54,18 +53,13 @@ public class Watcher {
    * @param listener
    * @throws IOException
    */
-  public Watcher(String baseDir, Listener listener) {
-    this.baseDir = baseDir;
-    this.listener = listener;
-    try {
-      this.watcher = FileSystems.getDefault().newWatchService();
-    } catch (IOException ex) {
-      ex.printStackTrace();
+  public Watcher(File baseDir, Listener listener) {
+    if(listener == null) {
+      throw new IllegalArgumentException("listener not provided");
     }
+    this.listener = listener;
+    this.baseDirPath = baseDir.getAbsolutePath();
     this.keys = new HashMap<WatchKey, Path>();
-
-    Path path = Paths.get(baseDir);
-    registerAll(path);
   }
 
   @SuppressWarnings("unchecked")
@@ -76,15 +70,9 @@ public class Watcher {
   /**
    * Register the given directory, and all its sub-directories, with the WatchService.
    */
-  private void registerAll(Path baseDir) {
-    String firstChr = baseDir.toString().substring(0, 1);
-    if (!firstChr.equals("/")) {
-      System.out.format("registerAll() :: Please enter baseDir path Starting with '/'.");
-      return;
-    }
-
+  private void registerAll(Path path) {
     try {
-      Files.walkFileTree(baseDir, new SimpleFileVisitor<Path>() {
+      Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
         @Override
         public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attrs)
             throws IOException {
@@ -93,8 +81,7 @@ public class Watcher {
         }
       });
     } catch (IOException ex) {
-      System.out.format("registerAll() :: Error occured while getting resource on path : %s",
-          baseDir);
+      System.out.format("registerAll() :: Error occured while getting resource on path : %s", path);
     }
   }
 
@@ -120,6 +107,14 @@ public class Watcher {
   }
 
   public void start() {
+    try {
+      this.watcher = FileSystems.getDefault().newWatchService();
+    } catch (IOException ex) {
+      System.err.println("Watcher:: Failed.");
+      ex.printStackTrace();
+    }
+    registerAll(Paths.get(baseDirPath));
+
     for (;;) {
 
       // wait for key to be signalled
@@ -146,32 +141,25 @@ public class Watcher {
         WatchEvent<Path> ev = cast(event);
         Path name = ev.context();
         Path child = dir.resolve(name);
-
-        Change change = new Change();
-        change.setPath(child.toString());
-
-        if (StringUtils.equals(kind.toString(), ENTRY_CREATE.toString())) {
-          change.setType(Change.Type.CREATED);
-        }
-        if (StringUtils.equals(kind.toString(), ENTRY_MODIFY.toString())) {
-          change.setType(Change.Type.UPDATED);
-        }
-        if (StringUtils.equals(kind.toString(), ENTRY_DELETE.toString())) {
-          change.setType(Change.Type.DELETED);
-        }
-
-        System.out.format("%s: %s\n", change.getType().toString(), child);
+        boolean isDirectory = Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS);
 
         // if directory is created, and watching recursively, then register it and its
         // sub-directories
-        if ((kind == ENTRY_CREATE)) {
-          if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) {
-            registerAll(child);
-          }
+        if ((kind == ENTRY_CREATE) && isDirectory) {
+          registerAll(child);
         }
 
-        // Uploader uploder = new Uploader();
-        // uploder.onChange(change);
+        if ((kind == ENTRY_CREATE || kind == ENTRY_MODIFY) && isDirectory) {
+          continue;
+        }
+
+        Change c = createChange(kind, child);
+        try {
+          listener.onChange(c);
+        } catch (Exception e) {
+          // ignore
+        }
+        // System.out.format("%s: %s\n", kind.toString(), child);
       }
 
       // reset key and remove from set if directory no longer accessible
@@ -181,9 +169,31 @@ public class Watcher {
 
         // all directories are inaccessible
         if (keys.isEmpty()) {
+          System.out.println("Watcher:: Exiting as no directory exist to watch");
           break;
         }
       }
+    }
+  }
+
+
+  private Change createChange(Kind<?> kind, Path path) {
+    Change c = new Change();
+    c.setPath(path.toString().replace(baseDirPath, ""));
+    c.setType(toType(kind));
+    return c;
+  }
+
+  private Change.Type toType(Kind<?> kind) {
+    switch (kind.name()) {
+      case "ENTRY_CREATE":
+        return Change.Type.CREATED;
+      case "ENTRY_MODIFY":
+        return Change.Type.UPDATED;
+      case "ENTRY_DELETE":
+        return Change.Type.DELETED;
+      default:
+        return null;
     }
   }
 }
