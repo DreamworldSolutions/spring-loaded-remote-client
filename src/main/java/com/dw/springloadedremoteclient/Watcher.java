@@ -26,14 +26,14 @@ import java.util.Map;
  * Continuously watches changes in given directory and notifies {@link Listener} when change is
  * detected.
  * 
- * It can handled following cases: <br>
+ * <p>It can handled following cases: <br>
  * - New file is added to root of the directory or sub-directory. <br>
  * - Existing File is changed at root of the dirctory of any sub-directory. <br>
  * - A directory is deleted with it's content. <br>
  * //TODO: For every file? OR only for deleted directory? <br>
  * - A new directory is added and in that a new file is added.
  * 
- * Notes::<br>
+ * <p>Notes::<br>
  * - When a new empty directory is added, Change listener isn't invoked.
  * 
  * @author Jaydeep Kumbhani
@@ -50,11 +50,10 @@ public class Watcher {
   /**
    * 
    * @param baseDir Directory to be watched.
-   * @param listener
-   * @throws IOException
+   * @param listener {@link Listener} instance
    */
   public Watcher(File baseDir, Listener listener) {
-    if(listener == null) {
+    if (listener == null) {
       throw new IllegalArgumentException("listener not provided");
     }
     this.listener = listener;
@@ -86,7 +85,7 @@ public class Watcher {
   }
 
   /**
-   * Register the given directory with the WatchService
+   * Register the given directory with the WatchService.
    */
   private void register(Path baseDir) {
     WatchKey key = null;
@@ -106,6 +105,19 @@ public class Watcher {
     keys.put(key, baseDir);
   }
 
+  /**
+   * Starting to continuously watching on baseDir and if any change found then that change <br/>
+   * notify to {@link Listener}. When invoke the method, first register to baseDir recursively
+   * including sub directories. <br/>
+   * 
+   * <p>If new directory or file created in registered directory then notify to {@link Listener} 
+   * with path and CREATED event.<br/>
+   * If existing files updated in registered directory then notify to {@link Listener} with path and
+   * UPDATED event <br/>
+   * . If existing file/s deleted from registered directory then notify to {@link Listener} with
+   * deleted file`s path.
+   * 
+   */
   public void start() {
     try {
       this.watcher = FileSystems.getDefault().newWatchService();
@@ -153,9 +165,9 @@ public class Watcher {
           continue;
         }
 
-        Change c = createChange(kind, child);
+        Change change = createChange(kind, child);
         try {
-          listener.onChange(c);
+          listener.onChange(change);
         } catch (Exception e) {
           // ignore
         }
@@ -178,10 +190,10 @@ public class Watcher {
 
 
   private Change createChange(Kind<?> kind, Path path) {
-    Change c = new Change();
-    c.setPath(path.toString().replace(baseDirPath, ""));
-    c.setType(toType(kind));
-    return c;
+    Change change = new Change();
+    change.setPath(path.toString().replace(baseDirPath, ""));
+    change.setType(toType(kind));
+    return change;
   }
 
   private Change.Type toType(Kind<?> kind) {
