@@ -15,15 +15,16 @@ public class App {
    * @param args first argument is baseDirectory.
    */
   public static void main(String[] args) {
-    String path = (args == null || args.length == 0) ? "target/classes" : args[0];
-    System.out.println("main() :: Start to watching on baseDir : " + path);
-    Watcher watcher = new Watcher(new File(path), new Listener() {
-
-      public void onChange(Change change) {
-        // Note:: Path must be starting with /, and baseDir shouldn't be repeated.
-        System.out.format("%s: %s\n", change.getType().toString(), change.getPath());
-      }
-    });
+    String remoteUrl = (args == null || args.length == 0)
+        ? System.getenv("springloadedremoteclient.baseUrl") : args[0];
+    String baseDirPath = (args == null || args.length < 2)
+        ? System.getenv("springloadedremoteclient.baseDir") : args[1];
+    baseDirPath = baseDirPath == null ? "target/classes" : baseDirPath;
+    System.out.println(
+        "main() :: Start to watching on baseDir : " + baseDirPath + " and remoteUrl: " + remoteUrl);
+    
+    Watcher watcher =
+        new Watcher(new File(baseDirPath), new Uploader(remoteUrl, new File(baseDirPath)));
     watcher.start();
   }
 }

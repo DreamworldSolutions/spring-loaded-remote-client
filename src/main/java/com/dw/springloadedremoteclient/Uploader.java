@@ -7,10 +7,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Uploads file to given URL using HTTP PUT. See API doc for more detail.
@@ -29,9 +32,8 @@ public class Uploader implements Listener {
 
   private String url;
   private File baseDir;
-  private ObjectMapper objectMapper = new ObjectMapper();
+  private ObjectMapper objectMapper;
   private HttpClient httpClient;
-
 
   /**
    * 
@@ -45,24 +47,22 @@ public class Uploader implements Listener {
     this.url = url + ENDPOINT;
     this.baseDir = baseDir;
     this.httpClient = HttpClientBuilder.create().build();
+    this.objectMapper = new ObjectMapper();
   }
 
   private void validateConstructorParam(String url, File baseDir) {
     if (StringUtils.isBlank(url)) {
-      throw new IllegalArgumentException("url is invalid");
+      throw new IllegalArgumentException("url: " + url + "  is invalid");
     }
     if (!baseDir.isDirectory()) {
-      throw new IllegalStateException("baseDir is not a Directory");
+      throw new IllegalStateException("baseDir: " + baseDir + " is not a Directory");
     }
     if (!baseDir.exists()) {
-      throw new IllegalStateException("Base Directory is not a exists");
+      throw new IllegalStateException("Base Directory: " + baseDir + " is not a exists");
     }
   }
 
-  /**
-   * a.
-   * 
-   */
+  @Override
   public void onChange(Change change) {
     try {
       validatePath(change.getPath());
@@ -78,11 +78,13 @@ public class Uploader implements Listener {
       request.setType(change.getType());
       request.setPath(change.getPath());
       request.setFile("file");
-      builder.addTextBody(REQ_BODY_PARAM, objectMapper.writeValueAsString(request));
+
+      List<Request> requests = new ArrayList<Request>();
+      requests.add(request);
+      builder.addTextBody(REQ_BODY_PARAM, objectMapper.writeValueAsString(requests));
 
       HttpPut putRequest = new HttpPut(url);
       putRequest.setEntity(builder.build());
-
 
       HttpResponse response = httpClient.execute(putRequest);
 
@@ -112,7 +114,7 @@ public class Uploader implements Listener {
       System.out.println("File not found at path: " + filePath + ".");
       return false;
     }
-    builder.addBinaryBody("file", updatedFile);
+    builder.addBinaryBody("file", updatedFile, ContentType.MULTIPART_FORM_DATA, "file");
     return true;
   }
 
