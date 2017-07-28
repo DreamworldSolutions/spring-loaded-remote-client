@@ -1,6 +1,7 @@
 package com.dw.springloadedremoteclient;
 
-import java.io.File;
+import com.dw.springloadedremoteclient.Change.Type;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
@@ -9,8 +10,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-import com.dw.springloadedremoteclient.Change.Type;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
 
 /**
  * Uploads file to given URL using HTTP PUT. See API doc for more detail.
@@ -59,6 +59,10 @@ public class Uploader implements Listener {
     }
   }
 
+  /**
+   * a.
+   * 
+   */
   public void onChange(Change change) {
     try {
       validatePath(change.getPath());
