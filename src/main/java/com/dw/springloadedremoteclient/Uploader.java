@@ -28,7 +28,9 @@ public class Uploader implements Listener {
    */
   private static final String REQ_BODY_PARAM = "request";
   private static final String ENDPOINT = "/spring-loaded";
-  private static final String PATH_START_WITH = "/";
+  private static final String SYSTEM_SEPARATOR_AS_STRING = String.valueOf(File.separatorChar);
+  private static final char WINDOWS_SEPARATOR = '\\';
+  private static final char UNIX_SEPARATOR = '/';
 
   private String url;
   private File baseDir;
@@ -76,7 +78,7 @@ public class Uploader implements Listener {
 
       Request request = new Request();
       request.setType(change.getType());
-      request.setPath(change.getPath());
+      request.setPath(separatorsToUnix(change.getPath()));
       request.setFile("file");
 
       List<Request> requests = new ArrayList<Request>();
@@ -100,6 +102,13 @@ public class Uploader implements Listener {
       e.printStackTrace();
     }
   }
+  
+  private String separatorsToUnix(final String path) {
+    if (path == null ) {
+      return path;
+    }
+    return path.replace(WINDOWS_SEPARATOR, UNIX_SEPARATOR);
+  }
 
 
   private boolean addFile(MultipartEntityBuilder builder, String path) {
@@ -119,8 +128,9 @@ public class Uploader implements Listener {
   }
 
   private void validatePath(String path) {
-    if (!StringUtils.startsWith(path, PATH_START_WITH)) {
-      throw new IllegalArgumentException("path doesn't start with '/'");
+    if (!StringUtils.startsWith(path, SYSTEM_SEPARATOR_AS_STRING)) {
+      throw new IllegalArgumentException(
+          "path doesn't start with '" + SYSTEM_SEPARATOR_AS_STRING + "'");
     }
   }
 }
