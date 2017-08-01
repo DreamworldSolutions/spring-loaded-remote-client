@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
@@ -94,8 +95,10 @@ public class Uploader implements Listener {
         System.out.println("Path=" + change.getPath() + ", type=" + change.getType()
             + " has been successfully pushed to remote server");
       } else {
+        StatusLine statusLine = response.getStatusLine();
         System.err.println("Path=" + change.getPath() + ", type=" + change.getType() + "Failed."
-            + "\n Response: \n" + response.getEntity().toString());
+            + "\n Response: \n" + response.getEntity().toString() + "\n Response phrase: \n"
+            + statusLine.getReasonPhrase() + "\n Status Code: \n" + statusLine.getStatusCode());
       }
     } catch (Exception e) {
       System.err.println("Path=" + change.getPath() + ", type=" + change.getType() + "Failed.");
