@@ -4,7 +4,7 @@
 
   <groupId>com.dw</groupId>
   <artifactId>spring-loaded-remote-client</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.1</version>
   <packaging>jar</packaging>
 
   <name>spring-loaded-remote-client</name>
@@ -48,12 +48,12 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>2.17</version>
+        <version>3.0.0</version>
         <dependencies>
           <dependency>
             <groupId>com.puppycrawl.tools</groupId>
             <artifactId>checkstyle</artifactId>
-            <version>7.3</version>
+            <version>8.18</version>
           </dependency>
         </dependencies>
         <configuration>
